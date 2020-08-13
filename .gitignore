@@ -55,3 +55,6 @@ include/darknet/
 uselib
 uselib_track
 darknet
+predictions.jpg
+bad.list
+__pycache__/
