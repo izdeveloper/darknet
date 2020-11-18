@@ -293,6 +293,13 @@ letterbox_image = lib.letterbox_image
 letterbox_image.argtypes = [IMAGE, c_int, c_int]
 letterbox_image.restype = IMAGE
 
+resize_image = lib.resize_image
+resize_image.argtypes = [IMAGE, c_int, c_int]
+resize_image.restype = IMAGE
+
+save_image = lib.save_image
+save_image.argtypes = [IMAGE, c_char_p]
+
 load_meta = lib.get_metadata
 lib.get_metadata.argtypes = [c_char_p]
 lib.get_metadata.restype = METADATA
