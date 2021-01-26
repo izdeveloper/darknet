@@ -1020,9 +1020,16 @@ extern "C" void draw_detections_cv_v3(mat_cv* mat, detection *dets, int num, flo
 // ====================================================================
 // Draw Loss & Accuracy chart
 // ====================================================================
+
+
 extern "C" mat_cv* draw_train_chart(char *windows_name, float max_img_loss, int max_batches, int number_of_lines, int img_size, int dont_show, char* chart_path)
 {
-    int img_offset = 60;
+    auto modify_value_fn = [img_size](int val) -> int {
+        constexpr auto default_img_size = 1000.0f;
+        return int(float(val) * img_size / default_img_size);
+    };
+
+    int img_offset = modify_value_fn(60);
     int draw_size = img_size - img_offset;
     cv::Mat *img_ptr = new cv::Mat(img_size, img_size, CV_8UC3, CV_RGB(255, 255, 255));
     cv::Mat &img = *img_ptr;
@@ -1038,26 +1045,26 @@ extern "C" mat_cv* draw_train_chart(char *windows_name, float max_img_loss, int 
             char char_buff[100];
             int i;
             // vertical lines
-            pt1.x = img_offset; pt2.x = img_size, pt_text.x = 30;
+            pt1.x = img_offset; pt2.x = img_size, pt_text.x = modify_value_fn(30);
             for (i = 1; i <= number_of_lines; ++i) {
                 pt1.y = pt2.y = (float)i * draw_size / number_of_lines;
                 cv::line(img, pt1, pt2, CV_RGB(224, 224, 224), 1, 8, 0);
                 if (i % 10 == 0) {
                     sprintf(char_buff, "%2.1f", max_img_loss*(number_of_lines - i) / number_of_lines);
-                    pt_text.y = pt1.y + 3;
+                    pt_text.y = pt1.y + modify_value_fn(3);
 
                     cv::putText(img, char_buff, pt_text, cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(0, 0, 0), 1, CV_AA);
                     cv::line(img, pt1, pt2, CV_RGB(128, 128, 128), 1, 8, 0);
                 }
             }
             // horizontal lines
-            pt1.y = draw_size; pt2.y = 0, pt_text.y = draw_size + 15;
+            pt1.y = draw_size; pt2.y = 0, pt_text.y = draw_size + modify_value_fn(15);
             for (i = 0; i <= number_of_lines; ++i) {
                 pt1.x = pt2.x = img_offset + (float)i * draw_size / number_of_lines;
                 cv::line(img, pt1, pt2, CV_RGB(224, 224, 224), 1, 8, 0);
                 if (i % 10 == 0) {
                     sprintf(char_buff, "%d", max_batches * i / number_of_lines);
-                    pt_text.x = pt1.x - 20;
+                    pt_text.x = pt1.x - modify_value_fn(20);
                     cv::putText(img, char_buff, pt_text, cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(0, 0, 0), 1, CV_AA);
                     cv::line(img, pt1, pt2, CV_RGB(128, 128, 128), 1, 8, 0);
                 }
@@ -1090,16 +1097,21 @@ extern "C" mat_cv* draw_train_chart(char *windows_name, float max_img_loss, int 
 extern "C" void draw_train_loss(char *windows_name, mat_cv* img_src, int img_size, float avg_loss, float max_img_loss, int current_batch, int max_batches,
     float precision, int draw_precision, char *accuracy_name, float contr_acc, int dont_show, int mjpeg_port, double time_remaining)
 {
+    auto modify_value_fn = [img_size](int val) -> int {
+        constexpr auto default_img_size = 1000.0f;
+        return int(float(val) * img_size / default_img_size);
+    };
+
     try {
         cv::Mat &img = *(cv::Mat*)img_src;
-        int img_offset = 60;
+        int img_offset = modify_value_fn(60);
         int draw_size = img_size - img_offset;
         char char_buff[100];
         cv::Point pt1, pt2;
         pt1.x = img_offset + draw_size * (float)current_batch / max_batches;
         pt1.y = draw_size * (1 - avg_loss / max_img_loss);
         if (pt1.y < 0) pt1.y = 1;
-        cv::circle(img, pt1, 1, CV_RGB(0, 0, 255), CV_FILLED, 8, 0);
+        cv::circle(img, pt1, 0, CV_RGB(0, 0, 255), CV_FILLED, 8, 0);
 
         // contrastive accuracy
         if (contr_acc >= 0) {
@@ -1114,8 +1126,8 @@ extern "C" void draw_train_loss(char *windows_name, mat_cv* img_src, int img_siz
             old_contr_acc = contr_acc;
 
             sprintf(char_buff, "C:%2.1f%% ", contr_acc * 100);
-            cv::putText(img, char_buff, cv::Point(1, 45), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(255, 255, 255), 5, CV_AA);
-            cv::putText(img, char_buff, cv::Point(1, 45), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(0, 150, 70), 1, CV_AA);
+            cv::putText(img, char_buff, cv::Point(modify_value_fn(1), modify_value_fn(45)), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(255, 255, 255), 5, CV_AA);
+            cv::putText(img, char_buff, cv::Point(modify_value_fn(1), modify_value_fn(45)), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(0, 150, 70), 1, CV_AA);
         }
 
         // precision
@@ -1125,7 +1137,7 @@ extern "C" void draw_train_loss(char *windows_name, mat_cv* img_src, int img_siz
             static int iteration_old = 0;
             static int text_iteration_old = 0;
             if (iteration_old == 0)
-                cv::putText(img, accuracy_name, cv::Point(10, 12), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(255, 0, 0), 1, CV_AA);
+                cv::putText(img, accuracy_name, cv::Point(modify_value_fn(10), modify_value_fn(12)), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(255, 0, 0), 1, CV_AA);
 
 	        if (iteration_old != 0){
             	    cv::line(img,
@@ -1135,24 +1147,24 @@ extern "C" void draw_train_loss(char *windows_name, mat_cv* img_src, int img_siz
 	        }
 
             sprintf(char_buff, "%2.1f%% ", precision * 100);
-            cv::putText(img, char_buff, cv::Point(10, 28), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(255, 255, 255), 5, CV_AA);
-            cv::putText(img, char_buff, cv::Point(10, 28), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(200, 0, 0), 1, CV_AA);
+            cv::putText(img, char_buff, cv::Point(modify_value_fn(10), modify_value_fn(28)), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(255, 255, 255), 5, CV_AA);
+            cv::putText(img, char_buff, cv::Point(modify_value_fn(10), modify_value_fn(28)), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(200, 0, 0), 1, CV_AA);
 
             if ((std::fabs(old_precision - precision) > 0.1)  || (max_precision < precision) || (current_batch - text_iteration_old) >= max_batches / 10) {
                 text_iteration_old = current_batch;
                 max_precision = std::max(max_precision, precision);
                 sprintf(char_buff, "%2.0f%% ", precision * 100);
-                cv::putText(img, char_buff, cv::Point(pt1.x - 30, draw_size * (1 - precision) + 15), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(255, 255, 255), 5, CV_AA);
-                cv::putText(img, char_buff, cv::Point(pt1.x - 30, draw_size * (1 - precision) + 15), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(200, 0, 0), 1, CV_AA);
+                cv::putText(img, char_buff, cv::Point(pt1.x - modify_value_fn(30), draw_size * (1 - precision) + modify_value_fn(15)), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(255, 255, 255), 5, CV_AA);
+                cv::putText(img, char_buff, cv::Point(pt1.x - modify_value_fn(30), draw_size * (1 - precision) + modify_value_fn(15)), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(200, 0, 0), 1, CV_AA);
             }
             old_precision = precision;
             iteration_old = current_batch;
         }
         sprintf(char_buff, "current avg loss = %2.4f    iteration = %d    approx. time left = %2.2f hours", avg_loss, current_batch, time_remaining);
-        pt1.x = 15, pt1.y = draw_size + 18;
-        pt2.x = pt1.x + 800, pt2.y = pt1.y + 20;
+        pt1.x = modify_value_fn(15), pt1.y = draw_size + modify_value_fn(18);
+        pt2.x = pt1.x + modify_value_fn(800), pt2.y = pt1.y + modify_value_fn(20);
         cv::rectangle(img, pt1, pt2, CV_RGB(255, 255, 255), CV_FILLED, 8, 0);
-        pt1.y += 15;
+        pt1.y += modify_value_fn(15);
         cv::putText(img, char_buff, pt1, cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(0, 0, 100), 1, CV_AA);
 
         int k = 0;
@@ -1162,13 +1174,14 @@ extern "C" void draw_train_loss(char *windows_name, mat_cv* img_src, int img_siz
         }
         static int old_batch = 0;
         if (k == 's' || current_batch == (max_batches - 1) || (current_batch / 100 > old_batch / 100)) {
+        // if(true) {
             old_batch = current_batch;
             save_mat_png(img, "chart.png");
             save_mat_png(img, windows_name);
-            cv::putText(img, "- Saved", cv::Point(260, img_size - 10), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(255, 0, 0), 1, CV_AA);
+            cv::putText(img, "- Saved", cv::Point(modify_value_fn(260), img_size - modify_value_fn(10)), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(255, 0, 0), 1, CV_AA);
         }
         else
-            cv::putText(img, "- Saved", cv::Point(260, img_size - 10), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(255, 255, 255), 1, CV_AA);
+            cv::putText(img, "- Saved", cv::Point(modify_value_fn(260), img_size - modify_value_fn(10)), cv::FONT_HERSHEY_COMPLEX_SMALL, 0.7, CV_RGB(255, 255, 255), 1, CV_AA);
 
         if (mjpeg_port > 0) send_mjpeg((mat_cv *)&img, mjpeg_port, 500000, 70);
     }
