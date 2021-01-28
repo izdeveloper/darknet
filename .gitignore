@@ -57,3 +57,4 @@ darknet
 predictions.jpg
 bad.list
 __pycache__/
+vcpkg/
